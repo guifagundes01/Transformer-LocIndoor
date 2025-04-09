@@ -1,7 +1,7 @@
 .editorconfig
 .idea
 .ipynb_checkpoints
-.ipynb
+*.ipynb
 output/
 .venv/
 
