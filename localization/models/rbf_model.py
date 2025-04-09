@@ -39,7 +39,6 @@ def verify_if_the_points_are_inside_the_polygon(points, polygon):
 
 
 class Model:
-
     def __init__(self,
                  num_buildings: int,
                  num_floors_in_each_building: dict,
@@ -61,6 +60,8 @@ class Model:
         self.x_building = {}
         self.y_building = {}
         self.power_prior_probability_distribution = {}
+        self.phi_rbf = {}
+        self.mu_rbf = {}
 
         self.trained = False
 
@@ -72,11 +73,15 @@ class Model:
                 self.building_polygons_holes[building] = None
             self.power_probability_masks[building] = {}
             self.power_prior_probability_distribution[building] = {}
+            self.phi_rbf[building] = {}
+            self.mu_rbf[building] = {}
 
         for building in range(self.num_buildings):
             for floor in range(self.num_floors_in_each_building[building]):
                 self.power_probability_masks[building][floor] = {}
                 self.power_prior_probability_distribution[building][floor] = {}
+                self.phi_rbf[building][floor] = {}
+                self.mu_rbf[building][floor] = {}
 
         self.epsilon = 1e-5
         self.grid_size_in_each_dimension_in_each_building = 100
@@ -87,12 +92,10 @@ class Model:
         self.max_power = 106
 
     def cumulative_distribution_function_of_t_student(self, x, v):
-
         return 0.5 + x * gamma((v + 1) / 2) * hyp2f1(1 / 2, (v + 1) / 2, 3 / 2, -(x ** 2) / v) / (
                 np.sqrt(v * np.pi) * gamma(v / 2))
 
     def cumulative_distribution_function_of_power(self, power, mu, phi):
-
         v = np.ceil(self.num_samples_per_ap * (1 - phi) - 1)
         v = np.where(v <= 0, 1, v)
         cdf = phi * np.heaviside(power, 1) + (1 - phi) * self.cumulative_distribution_function_of_t_student(
@@ -101,7 +104,6 @@ class Model:
         return cdf
 
     def approximate_position_density_function_given_router(self, power, mu, phi):
-
         v = np.ceil(self.num_samples_per_ap * (1 - phi) - 1)
         v = np.where(v <= 0, 1, v)
         t_score = scipy.stats.t.ppf(0.5 + self.t_score_alpha, v)
@@ -124,7 +126,6 @@ class Model:
         return np.log(r + self.epsilon)
 
     def checking_non_null_minimum_percentage_of_samples(self, X_train, router):
-
         num_non_null_samples = (X_train[router] != 0).sum()
         num_total_samples = X_train[router].shape[0]
         non_null_percentage = num_non_null_samples / num_total_samples
@@ -132,7 +133,6 @@ class Model:
         return (non_null_percentage > self.non_null_minimum_percentage)
 
     def get_mu_and_phi_estimation(self, X_train, router):
-
         phi_ = {}
         mu_ = {}
 
@@ -156,7 +156,6 @@ class Model:
         return X_train
 
     def construct_building_map(self, dataset, building):
-
         filtered_dataset = dataset.get_floor_data(building=building)
         X_train = filtered_dataset.get_full_df()
 
@@ -191,22 +190,18 @@ class Model:
         return x_building, y_building
 
     def train(self, dataset):
-
         for building in range(self.num_buildings):
-
             x_building, y_building = self.construct_building_map(dataset, building)
 
             self.x_building[building] = x_building
             self.y_building[building] = y_building
 
             for floor in tqdm(range(self.num_floors_in_each_building[building])):
-
                 filtered_dataset = dataset.get_floor_data(building=building, floor=floor)
                 X_train = filtered_dataset.get_full_df()
                 routers = self.get_all_routers_in_this_floor(X_train.columns)
 
                 for router in routers:
-
                     if self.checking_non_null_minimum_percentage_of_samples(X_train, router):
 
                         self.power_probability_masks[building][floor][router] = {}
@@ -227,6 +222,8 @@ class Model:
                         phi_building = rbf_phi(x_building, y_building)
 
                         self.power_prior_probability_distribution[building][floor][router] = {}
+                        self.phi_rbf[building][floor][router] = phi_building
+                        self.mu_rbf[building][floor][router] = mu_building
 
                         total_num_samples_in_router = X_train[router].shape[0]
 
@@ -259,7 +256,6 @@ class Model:
 
     def plot_density_function_xy_given_bfrp(self, building, floor, router, power_db, image_save_path=None,
                                             figsize=(6, 4)):
-
         plt.figure(figsize=figsize)
 
         converted_power = self.convert_power_db_to_base_used_in_the_model(power_db)
@@ -285,7 +281,6 @@ class Model:
 
     def plot_density_function_xy_given_bfr_for_different_p(self, building, floor, router, power_db_list, figsize=(6, 4),
                                                            image_save_path_list=None):
-
         if image_save_path_list is None:
             for power_db in power_db_list:
                 self.plot_density_function_xy_given_bfrp(building, floor, router, power_db)
@@ -299,6 +294,7 @@ class Model:
 
     def pred(self, X_test, selected_building=0, selected_floor=0):
         y_pred = []
+        distribution_xy_given_bf = {}
 
         for index in X_test.index:
 
