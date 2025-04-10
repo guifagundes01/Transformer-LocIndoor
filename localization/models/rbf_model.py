@@ -222,8 +222,8 @@ class Model:
                         phi_building = rbf_phi(x_building, y_building)
 
                         self.power_prior_probability_distribution[building][floor][router] = {}
-                        self.phi_rbf[building][floor][router] = phi_building
-                        self.mu_rbf[building][floor][router] = mu_building
+                        self.phi_rbf[building][floor][router] = rbf_phi
+                        self.mu_rbf[building][floor][router] = rbf_mu
 
                         total_num_samples_in_router = X_train[router].shape[0]
 

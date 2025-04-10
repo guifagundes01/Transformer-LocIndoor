@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.multioutput import MultiOutputClassifier
+from scipy.interpolate import Rbf
 
 from localization import utils, dataset
 
@@ -85,6 +86,9 @@ def error_plot(data):
     plt.legend()
     plt.show()
 
+def radial_log_basis_function(self, r):
+    return np.log(r + self.epsilon)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run tLoc')
     parser.add_argument('--seed', type=int, default=33, help='Random seed')
@@ -98,10 +102,11 @@ if __name__ == "__main__":
 
     utils.make_deterministic(args.seed)
 
+    Rbf.radial_log_basis_function = radial_log_basis_function
     with open('output/model.bin', 'rb') as inp:
         model = pickle.load(inp)
 
-    dataset = dataset.load_ujiindoor_loc(data_folder='data/generated')
+    dataset = dataset.load_ujiindoor_loc(data_folder='data')
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
     x_train, X_test = dataset.get_X()
