@@ -117,6 +117,7 @@ class Model:
 
     def get_all_routers_in_this_floor(self, columns):
         routers = []
+        
         for column in columns:
             if 'WAP' in column:
                 routers.append(column)
