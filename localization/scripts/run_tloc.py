@@ -66,11 +66,11 @@ def evaluate_categorical_location_model(model, x_test, y_test):
 
 def error_plot(data):
     import matplotlib.pyplot as plt
-    try:
-        import scienceplots
-        plt.style.use(['science','ieee'])
-    except:
-        print("SciencePlots not found")
+    # try:
+    #     import scienceplots
+    #     plt.style.use(['science','ieee'])
+    # except:
+    #     print("SciencePlots not found")
 
     scores = data
     threshold = np.percentile(distances, 90)
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     utils.make_deterministic(args.seed)
 
-    with open('output/model.bin', 'rb') as inp:
+    with open('output/filtered_model.bin', 'rb') as inp:
         model = pickle.load(inp)
 
     dataset = dataset.load_ujiindoor_loc(data_folder='data/generated')
