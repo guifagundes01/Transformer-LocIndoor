@@ -16,6 +16,5 @@ class RankingBased:
         if len(null_ix) > 0:
             first_null = int(null_ix[0])
         ranking = np.zeros(len(ix)) + default_value
-        for i in range(first_null):
-            ranking[ix[i]] = i + 1
+        ranking[ix[:first_null]] = np.arange(1, first_null + 1)
         return ranking

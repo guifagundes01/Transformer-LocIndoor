@@ -10,6 +10,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.multioutput import MultiOutputClassifier
+from scipy.interpolate import Rbf
 
 from localization import utils, dataset
 
@@ -87,13 +88,15 @@ def filter_building(model, building, percentile):
     distances, elapsed_time = evaluate_model(model, discrete_location_model, b_dataset, y_continuous_test)
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
-    
+
     threshold = np.percentile(distances, percentile)
     print(f'Threshold: {threshold:.2f}')
     print(f'Threshold percetage: {sum(distances<threshold)/len(distances):.2f}\n')
     filtered = b_dataset.get_full_df()[distances<threshold]
     return filtered
 
+def radial_log_basis_function(self, r):
+    return np.log(r + self.epsilon)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run tLoc')
@@ -108,6 +111,7 @@ if __name__ == "__main__":
 
     utils.make_deterministic(args.seed)
 
+    Rbf.radial_log_basis_function = radial_log_basis_function
     with open('output/model.bin', 'rb') as inp:
         model = pickle.load(inp)
 
@@ -124,4 +128,4 @@ if __name__ == "__main__":
 
     filtered_df.to_csv('data/filtered/trainingData.csv')
     shutil.copy('data/validationData.csv', 'data/filtered/validationData.csv')
-    
+
