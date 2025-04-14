@@ -103,10 +103,10 @@ if __name__ == "__main__":
     utils.make_deterministic(args.seed)
 
     Rbf.radial_log_basis_function = radial_log_basis_function
-    with open('output/model.bin', 'rb') as inp:
+    with open('output/model_gen.bin', 'rb') as inp:
         model = pickle.load(inp)
 
-    dataset = dataset.load_ujiindoor_loc(data_folder='data')
+    dataset = dataset.load_ujiindoor_loc(data_folder='data/generated-sample-5')
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
     x_train, X_test = dataset.get_X()

@@ -20,7 +20,7 @@ path_to_the_polygon_files_of_each_building = {0: 'data/geometry_building_0.npy',
 sigma = 6.75
 num_samples_per_ap = 20
 
-dataset = dataset.load_ujiindoor_loc(data_folder='data')
+dataset = dataset.load_ujiindoor_loc(data_folder='data/generated-sample-5')
 
 model = Model(num_buildings,
               num_floors_in_each_building,
@@ -31,5 +31,5 @@ model.train(dataset)
 
 if not path.exists('output'): mkdir('output')
 
-with open('output/model.bin', 'wb') as outp:
+with open('output/model_gen.bin', 'wb') as outp:
     pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
