@@ -108,7 +108,9 @@ if __name__ == "__main__":
     with open('output/filtered_model.bin', 'rb') as inp:
         model = pickle.load(inp)
 
-    dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
+    # dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
+    # dataset = dataset.load_ujiindoor_loc(data_folder='data/generated2')
+    dataset = dataset.load_ujiindoor_loc(data_folder='data/generated2', transform=False)
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
     x_train, X_test = dataset.get_X()
@@ -121,8 +123,8 @@ if __name__ == "__main__":
     print('Building and floor accuracy:', np.round(100 * score, 2))
     print('Prediction time:', np.round(elapsed_time, 2), 's\n')
 
-    # distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_test)
-    distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_train)
+    distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_test)
+    # distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_train)
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Removing the discrete position errors:')
