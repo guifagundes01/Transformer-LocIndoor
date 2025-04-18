@@ -113,13 +113,13 @@ if __name__ == "__main__":
     dataset = dataset.load_ujiindoor_loc(data_folder='data/generated2', transform=False)
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
-    x_train, X_test = dataset.get_X()
+    X_train, X_test = dataset.get_X()
     y_train, y_test = dataset.get_categorical_y()
     y_continuous_train, y_continuous_test = dataset.get_normalized_y()
 
-    discrete_location_model = train_discrete_location_model(x_train, y_train, 'euclidean', 3)
-    # score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, X_test, y_test)
-    score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, x_train, y_train)
+    discrete_location_model = train_discrete_location_model(X_train, y_train, 'euclidean', 3)
+    score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, X_test, y_test)
+    # score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, X_train, y_train)
     print('Building and floor accuracy:', np.round(100 * score, 2))
     print('Prediction time:', np.round(elapsed_time, 2), 's\n')
 
