@@ -5,18 +5,18 @@ from os import path
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from localization.dataset.dataset import Dataset
-
 
 def load_ujiindoor_loc(data_folder='data', transform=True):
     df_training = pd.read_csv(path.join(data_folder, 'trainingData.csv'))
     df_validation = pd.read_csv(path.join(data_folder, 'validationData.csv'))
     return UJIIndoorLoc(df_training, df_validation, transform=transform)
 
+
 def calculate_means(dataframe):
     return [dataframe['LATITUDE'].mean(), dataframe['LONGITUDE'].mean()]
 
-class UJIIndoorLoc(Dataset):
+
+class UJIIndoorLoc():
     def __init__(self, df_training, df_validation, transform):
         self.df_training, self.df_validation, self.input_columns = self.preprocess(df_training, df_validation,
                                                                                    transform)
@@ -71,7 +71,7 @@ class UJIIndoorLoc(Dataset):
             df[input_columns] = df[input_columns] + 105
         return df.copy()
 
-    def get_X(self):
+    def get_X(self) -> tuple[np.ndarray, np.ndarray]:
         return self.df_training[self.input_columns].to_numpy(), self.df_validation[self.input_columns].to_numpy()
 
     # TODO: deprecate in favor of getX
@@ -81,7 +81,7 @@ class UJIIndoorLoc(Dataset):
     def get_full_df(self):
         return self.df_training
 
-    def get_categorical_y(self):
+    def get_categorical_y(self) -> tuple[np.ndarray, np.ndarray]:
         y_train = np.hstack([(self.df_training['BUILDINGID']).to_numpy().reshape(-1, 1),
                              (self.df_training['FLOOR']).to_numpy().reshape(-1, 1)])
         y_test = np.hstack([(self.df_validation['BUILDINGID']).to_numpy().reshape(-1, 1),
@@ -94,7 +94,7 @@ class UJIIndoorLoc(Dataset):
         if building is not None:
             df_train = df_train[df_train['BUILDINGID'] == building]
             df_test = df_test[df_test['BUILDINGID'] == building]
-            building_means = calculate_means(df_train)
+            # building_means = calculate_means(df_train)
         if floor is not None:
             df_train = df_train[df_train['FLOOR'] == floor]
             df_test = df_test[df_test['FLOOR'] == floor]
@@ -104,7 +104,7 @@ class UJIIndoorLoc(Dataset):
 
         return UJIIndoorLoc(df_train, df_test, transform=False)
 
-    def get_normalized_y(self):
+    def get_normalized_y(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Converts Latitude and Longitude to a reference with mean (x,y) = 0
 
