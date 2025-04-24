@@ -12,7 +12,7 @@ class Augmentation:
     def __init__(self, model: Model, routers: list, seed: int = 33):
         """
         Initialize with a trained model (from rbf_model.py) to leverage power_probability_masks.
-        
+
         Args:
             model: Trained instance of the Model class from rbf_model.py.
         """
@@ -23,10 +23,10 @@ class Augmentation:
     def generate_augmented_data(self, num_samples_per_floor=100):
         """
         Generate augmented WiFi fingerprints using power_probability_masks and power_prior_probability_distribution.
-        
+
         Args:
             num_samples_per_floor: Number of augmented samples to generate per floor.
-            
+
         Returns:
             pd.DataFrame: augmented data with columns for building, floor, coordinates, and router powers.
         """
@@ -75,12 +75,12 @@ class Augmentation:
     def generate_batched_augmented_data_w_parameters(self, num_samples=100, batch_size=10, data_dir='data/generated'):
         """
         Generate augmented WiFi fingerprints using mu and phi rbf models.
-        
+
         Args:
             num_samples: Number of augmented samples to generate.
             batch_size: Number of samples to generate in each batch.
             data_dir: Directory to save the generated data.
-            
+
         Returns:
             pd.DataFrame: augmented data with columns for building, floor, coordinates, and router powers.
         """
@@ -92,7 +92,6 @@ class Augmentation:
         generated_data.to_csv(f'{data_dir}/trainingData.csv', index=False)
         generated_data.to_csv(f'{data_dir}/validationData.csv', index=False)
 
-        augmented_data = []
         for _ in tqdm(range(num_batches)):
             b = self.rng.integers(0, self.model.num_buildings, size=batch_size)
             f = np.array([self.rng.integers(0, self.model.num_floors_in_each_building[building]) for building in b])
@@ -139,10 +138,10 @@ class Augmentation:
     def generate_augmented_data_w_parameters(self, num_samples=100):
         """
         Generate augmented WiFi fingerprints using mu and phi rbf models.
-        
+
         Args:
             num_samples: Number of augmented samples to generate.
-            
+
         Returns:
             pd.DataFrame: augmented data with columns for building, floor, coordinates, and router powers.
         """

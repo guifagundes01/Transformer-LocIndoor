@@ -55,5 +55,15 @@ if __name__ == "__main__":
                             power] = model.approximate_position_density_function_given_router(power, mu_building,
                                                                                              phi_building)
 
-    with open(f'output/model_filtered_{grid_size}.bin', 'wb') as outp:
-        pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
+    model_data = {
+        "x_building": model.x_building,
+        "y_building": model.y_building,
+        "power_probability_masks": model.power_probability_masks,
+        "power_prior_probability_distribution": model.power_prior_probability_distribution,
+    }
+
+    with open(f'output/model_data_filtered_{grid_size}.bin', 'wb') as outp:
+        pickle.dump(model_data, outp, pickle.HIGHEST_PROTOCOL)
+
+    # with open(f'output/model_filtered_{grid_size}.bin', 'wb') as outp:
+    #     pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
