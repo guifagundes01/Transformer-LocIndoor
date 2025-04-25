@@ -1,9 +1,14 @@
 # Author: Alexandre Maranhão <alexandremr01@gmail.com>
 
-import pandas as pd
 from os import path
+
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from shapely.geometry import Polygon
+from scipy.spatial import ConvexHull
+from numpy.typing import NDArray
 
 
 def load_ujiindoor_loc(data_folder='data', transform=True):
@@ -139,3 +144,34 @@ class UJIIndoorLoc():
 
         """
         return df[['x','y']]
+
+    def compute_dimensions(self, points: NDArray):
+        hull = ConvexHull(points)
+        hull_points = points[hull.vertices]
+
+        polygon = Polygon(hull_points)
+        obb = polygon.minimum_rotated_rectangle
+        obb_coords = np.array(obb.exterior.coords)
+
+        edges_obb = np.linalg.norm(obb_coords[1:] - obb_coords[:-1], axis=1)
+        length_obb, width_obb = np.sort(edges_obb[:2])[::-1]
+
+        plt.figure(figsize=(8, 8))
+        plt.plot(points[:, 0], points[:, 1], 'o', label='Original Points')
+
+        hull_closed = np.vstack([hull_points, hull_points[0]])
+        plt.plot(hull_closed[:, 0], hull_closed[:, 1], 'k--', label='Convex Hull')
+
+        obb_closed = np.vstack([obb_coords, obb_coords[0]])
+        plt.plot(obb_closed[:, 0], obb_closed[:, 1], 'r-', linewidth=2, label='OBB (Min Rotated Box)')
+
+        plt.title(f"Polygon with OBB\nOBB - Length: {length_obb:.2f} m, Width: {width_obb:.2f} m")
+        plt.xlabel("UTM X (meters)")
+        plt.ylabel("UTM Y (meters)")
+        plt.axis('equal')
+        plt.grid(True)
+        plt.legend()
+        plt.savefig("figures/points_dimensions")
+        plt.show()
+
+        return length_obb, width_obb

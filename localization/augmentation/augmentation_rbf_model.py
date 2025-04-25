@@ -70,7 +70,7 @@ class Augmentation:
                         })
                     augmented_data.append(sample)
 
-    def generate_augmented_data_batched(self, num_samples_per_floor=100, batch_size=10, data_dir="data/generated"):
+    def generate_augmented_data_batched(self, num_samples_per_floor=100, batch_size=10, test_size=0.1, data_dir="data/generated"):
         """
         Generate augmented WiFi fingerprints using power_probability_masks and power_prior_probability_distribution.
 
@@ -136,12 +136,12 @@ class Augmentation:
                 augmented_data.append(sample)
 
             augmented_data = pd.DataFrame(augmented_data)
-            train_df, test_df = train_test_split(augmented_data, test_size=0.1)
+            train_df, test_df = train_test_split(augmented_data, test_size=test_size)
 
             train_df.to_csv(f'{data_dir}/trainingData.csv', index=False, mode='a', header=False)
             test_df.to_csv(f'{data_dir}/validationData.csv', index=False, mode='a', header=False)
 
-    def generate_batched_augmented_data_w_parameters(self, num_samples=100, batch_size=10, data_dir='data/generated'):
+    def generate_batched_augmented_data_w_parameters(self, num_samples=100, batch_size=10, test_size=0.1, data_dir='data/generated'):
         """
         Generate augmented WiFi fingerprints using mu and phi rbf models.
 
@@ -199,7 +199,7 @@ class Augmentation:
             generated_data = pd.DataFrame(gen_data)
             generated_data = generated_data.fillna(0.0)
             generated_data = generated_data.clip(lower=0)
-            train_df, test_df = train_test_split(generated_data, test_size=0.1)
+            train_df, test_df = train_test_split(generated_data, test_size=test_size)
 
             train_df.to_csv(f'{data_dir}/trainingData.csv', index=False, mode='a', header=False)
             test_df.to_csv(f'{data_dir}/validationData.csv', index=False, mode='a', header=False)
