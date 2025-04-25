@@ -1,1 +1,1 @@
-from localization.dataset.ujiindoorloc import UJIIndoorLoc, load_ujiindoor_loc
+from localization.dataset.ujiindoorloc import UJIIndoorLoc, load_ujiindoor_loc, calculate_means

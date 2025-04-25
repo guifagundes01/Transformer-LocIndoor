@@ -70,7 +70,73 @@ class Augmentation:
                         })
                     augmented_data.append(sample)
 
-        return pd.DataFrame(augmented_data)
+    def generate_augmented_data_batched(self, num_samples_per_floor=100, batch_size=10, data_dir="data/generated"):
+        """
+        Generate augmented WiFi fingerprints using power_probability_masks and power_prior_probability_distribution.
+
+        Args:
+            num_samples_per_floor: Number of augmented samples to generate per floor.
+            batch_size: Number of samples to generate in each batch.
+            data_dir: Directory to save the generated data.
+
+        Returns:
+            pd.DataFrame: augmented data with columns for building, floor, coordinates, and router powers.
+        """
+
+        num_batches = num_samples_per_floor // batch_size
+        y_columns = ["LATITUDE", "LONGITUDE", "x", "y"]
+        metadata_columns = ["BUILDINGID", "FLOOR", "SPACEID", "RELATIVEPOSITION", "USERID", "PHONEID", "TIMESTAMP"]
+        generated_data = pd.DataFrame(columns=self.routers + y_columns + metadata_columns)
+        if not path.exists(data_dir): mkdir(data_dir)
+        generated_data.to_csv(f'{data_dir}/trainingData.csv', index=False)
+        generated_data.to_csv(f'{data_dir}/validationData.csv', index=False)
+
+        for _ in tqdm(range(num_batches)):
+            augmented_data = []
+            for building in self.model.power_probability_masks.keys():
+                for floor in self.model.power_probability_masks[building].keys():
+                    routers = list(self.model.power_probability_masks[building][floor].keys())
+                    for _ in range(batch_size):
+                        # Sample a valid (x, y) location from the building's grid
+                        valid_indices = np.arange(len(self.model.x_building[building]))
+                        loc_idx = self.rng.choice(valid_indices)
+                        x, y = self.model.x_building[building][loc_idx], self.model.y_building[building][loc_idx]
+                        sample = {wap: 0.0 for wap in self.routers}
+
+                        for router in routers:
+                            # Get the probability distribution of powers for this router at (x, y)
+                            power_probs = self.model.power_probability_masks[building][floor][router]
+                            powers = list(power_probs.keys())
+                            probs = [power_probs[p][loc_idx] * self.model.power_prior_probability_distribution[building][floor][router][p] * len(self.model.x_building[building]) for p in powers]  # Bayes
+                            # probs = [power_probs[p][loc_idx] for p in powers]  # P(power | x, y)
+
+                            probs = np.clip(probs, 0, None)  # Replace negatives with 0
+                            epsilon = 1e-5
+                            probs += epsilon
+                            probs = probs / np.sum(probs)     # Renormalize
+
+                            # Sample a power value
+                            power = self.rng.choice(powers, p=probs)
+                            sample[router] = power
+
+                            sample.update({
+                                'x': x,
+                                'y': y,
+                                'FLOOR': floor,
+                                'BUILDINGID': building,
+                                'SPACEID': -1,
+                                'RELATIVEPOSITION': -1,
+                                'USERID': -1,
+                                'PHONEID': -1,
+                                'TIMESTAMP': -1,
+                            })
+                        augmented_data.append(sample)
+
+            augmented_data = pd.DataFrame(augmented_data)
+            train_df, test_df = train_test_split(augmented_data, test_size=0.1)
+
+            train_df.to_csv(f'{data_dir}/trainingData.csv', index=False, mode='a', header=False)
+            test_df.to_csv(f'{data_dir}/validationData.csv', index=False, mode='a', header=False)
 
     def generate_batched_augmented_data_w_parameters(self, num_samples=100, batch_size=10, data_dir='data/generated'):
         """
@@ -178,3 +244,5 @@ class Augmentation:
         gen_data["x"] = x
         gen_data["y"] = y
         generated_data = pd.DataFrame(gen_data)
+
+        return generated_data
