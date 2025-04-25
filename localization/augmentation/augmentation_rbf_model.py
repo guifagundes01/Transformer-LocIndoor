@@ -84,7 +84,8 @@ class Augmentation:
         """
 
         num_batches = num_samples_per_floor // batch_size
-        y_columns = ["LATITUDE", "LONGITUDE", "x", "y"]
+        # y_columns = ["LATITUDE", "LONGITUDE", "x", "y"]
+        y_columns = ["x", "y"]
         metadata_columns = ["BUILDINGID", "FLOOR", "SPACEID", "RELATIVEPOSITION", "USERID", "PHONEID", "TIMESTAMP"]
         generated_data = pd.DataFrame(columns=self.routers + y_columns + metadata_columns)
         if not path.exists(data_dir): mkdir(data_dir)
