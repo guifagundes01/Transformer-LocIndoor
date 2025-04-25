@@ -91,46 +91,48 @@ class Augmentation:
         generated_data.to_csv(f'{data_dir}/trainingData.csv', index=False)
         generated_data.to_csv(f'{data_dir}/validationData.csv', index=False)
 
+        bs = [b for b, nf in self.model.num_floors_in_each_building.items() for _ in range(nf * batch_size)]
+        fs = [f for _, nf in self.model.num_floors_in_each_building.items() for f in range(nf) for _ in range(batch_size)]
         for _ in tqdm(range(num_batches)):
             augmented_data = []
-            for building in self.model.power_probability_masks.keys():
-                for floor in self.model.power_probability_masks[building].keys():
-                    routers = list(self.model.power_probability_masks[building][floor].keys())
-                    for _ in range(batch_size):
-                        # Sample a valid (x, y) location from the building's grid
-                        valid_indices = np.arange(len(self.model.x_building[building]))
-                        loc_idx = self.rng.choice(valid_indices)
-                        x, y = self.model.x_building[building][loc_idx], self.model.y_building[building][loc_idx]
-                        sample = {wap: 0.0 for wap in self.routers}
 
-                        for router in routers:
-                            # Get the probability distribution of powers for this router at (x, y)
-                            power_probs = self.model.power_probability_masks[building][floor][router]
-                            powers = list(power_probs.keys())
-                            probs = [power_probs[p][loc_idx] * self.model.power_prior_probability_distribution[building][floor][router][p] * len(self.model.x_building[building]) for p in powers]  # Bayes
-                            # probs = [power_probs[p][loc_idx] for p in powers]  # P(power | x, y)
+            for i in range(batch_size):
+                routers = list(self.model.power_probability_masks[bs[i]][fs[i]].keys())
+                # Sample a valid (x, y) location from the building's grid
+                valid_indices = np.arange(len(self.model.x_building[bs[i]]))
+                loc_idx = self.rng.choice(valid_indices)
+                x, y = self.model.x_building[bs[i]][loc_idx], self.model.y_building[bs[i]][loc_idx]
+                sample = {wap: 0.0 for wap in self.routers}
 
-                            probs = np.clip(probs, 0, None)  # Replace negatives with 0
-                            epsilon = 1e-5
-                            probs += epsilon
-                            probs = probs / np.sum(probs)     # Renormalize
+                for router in routers:
+                    # Get the probability distribution of powers for this router at (x, y)
+                    p_xy_given_bfrp = self.model.power_probability_masks[bs[i]][fs[i]][router]
+                    p_p = self.model.power_prior_probability_distribution[bs[i]][fs[i]][router]
+                    powers = list(p_xy_given_bfrp.keys())
+                    probs = [p_xy_given_bfrp[p][loc_idx] * p_p[p] * len(self.model.x_building[bs[i]]) for p in powers]  # Bayes
+                    # probs = [power_probs[p][loc_idx] for p in powers]  # P(power | x, y)
 
-                            # Sample a power value
-                            power = self.rng.choice(powers, p=probs)
-                            sample[router] = power
+                    probs = np.clip(probs, 0, None)  # Replace negatives with 0
+                    epsilon = 1e-5
+                    probs += epsilon
+                    probs = probs / np.sum(probs)     # Renormalize
 
-                            sample.update({
-                                'x': x,
-                                'y': y,
-                                'FLOOR': floor,
-                                'BUILDINGID': building,
-                                'SPACEID': -1,
-                                'RELATIVEPOSITION': -1,
-                                'USERID': -1,
-                                'PHONEID': -1,
-                                'TIMESTAMP': -1,
-                            })
-                        augmented_data.append(sample)
+                    # Sample a power value
+                    power = self.rng.choice(powers, p=probs)
+                    sample[router] = power
+
+                    sample.update({
+                        'x': x,
+                        'y': y,
+                        'FLOOR': fs[i],
+                        'BUILDINGID': bs[i],
+                        'SPACEID': -1,
+                        'RELATIVEPOSITION': -1,
+                        'USERID': -1,
+                        'PHONEID': -1,
+                        'TIMESTAMP': -1,
+                    })
+                augmented_data.append(sample)
 
             augmented_data = pd.DataFrame(augmented_data)
             train_df, test_df = train_test_split(augmented_data, test_size=0.1)
