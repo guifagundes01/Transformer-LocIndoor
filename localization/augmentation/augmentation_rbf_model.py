@@ -3,7 +3,7 @@ from os import mkdir, path
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm import trange
 from sklearn.model_selection import train_test_split
 
 from  localization.models.rbf_model import Model
@@ -94,10 +94,10 @@ class Augmentation:
 
         bs = [b for b, nf in self.model.num_floors_in_each_building.items() for _ in range(nf * batch_size)]
         fs = [f for _, nf in self.model.num_floors_in_each_building.items() for f in range(nf) for _ in range(batch_size)]
-        for _ in tqdm(range(num_batches)):
+        for _ in trange(num_batches):
             augmented_data = []
 
-            for i in range(batch_size):
+            for i in range(len(bs)):
                 routers = list(self.model.power_probability_masks[bs[i]][fs[i]].keys())
                 # Sample a valid (x, y) location from the building's grid
                 valid_indices = np.arange(len(self.model.x_building[bs[i]]))
@@ -161,7 +161,7 @@ class Augmentation:
         generated_data.to_csv(f'{data_dir}/trainingData.csv', index=False)
         generated_data.to_csv(f'{data_dir}/validationData.csv', index=False)
 
-        for _ in tqdm(range(num_batches)):
+        for _ in trange(num_batches):
             b = self.rng.integers(0, self.model.num_buildings, size=batch_size)
             f = np.array([self.rng.integers(0, self.model.num_floors_in_each_building[building]) for building in b])
             idxs = [self.rng.integers(0, len(self.model.x_building[building])) for building in b]

@@ -86,6 +86,7 @@ def error_plot(data):
     plt.ylabel('Absolute Error')
     plt.grid(True)
     plt.legend()
+    plt.savefig("figures/outliers-filtered")
     plt.show()
 
 def radial_log_basis_function(self, r):
@@ -108,9 +109,7 @@ if __name__ == "__main__":
     with open('output/filtered_model.bin', 'rb') as inp:
         model = pickle.load(inp)
 
-    # dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
-    # dataset = dataset.load_ujiindoor_loc(data_folder='data/generated2')
-    dataset = dataset.load_ujiindoor_loc(data_folder='data/generated2', transform=False)
+    dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
     X_train, X_test = dataset.get_X()

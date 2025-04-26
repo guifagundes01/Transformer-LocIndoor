@@ -20,7 +20,7 @@ path_to_the_polygon_files_of_each_building = {0: 'data/geometry_building_0.npy',
 sigma = 6.75
 num_samples_per_ap = 20
 
-dataset = dataset.load_ujiindoor_loc(data_folder='data/generated-sample-5')
+dataset = dataset.load_ujiindoor_loc(data_folder='data/generated', transform=False)
 
 model = Model(num_buildings,
               num_floors_in_each_building,
