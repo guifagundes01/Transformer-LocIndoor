@@ -84,7 +84,7 @@ class Model:
                 self.mu_rbf[building][floor] = {}
 
         self.epsilon = 1e-5
-        self.grid_size_in_each_dimension_in_each_building = 100
+        self.grid_size_in_each_dimension_in_each_building = 250
         self.t_score_alpha = 0.05
         self.non_null_minimum_percentage = 0.10
         self.random_position_error = 0.01  # meters
