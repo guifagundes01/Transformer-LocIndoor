@@ -298,32 +298,25 @@ class Model:
         distribution_xy_given_bf = {}
 
         for index in X_test.index:
-
             test_sample = X_test.loc[index].to_frame().T
-
             distribution_xy_given_bf = {}
             normalization_term = {}
-
             count_count = {}
 
             for building in range(self.num_buildings):
-
                 min_prob = self.epsilon * np.ones(len(self.x_building[building]))
                 distribution_xy_given_bf[building] = {}
                 normalization_term[building] = 0
-
                 count_count[building] = {}
 
                 for floor in range(self.num_floors_in_each_building[building]):
-
                     distribution_xy_given_bf[building][floor] = np.ones(len(self.x_building[building]))
 
                     count = 0
 
                     for router in self.get_valid_routers_building_and_floor(building, floor):
-
                         if router in test_sample.columns:
-                            power = int(test_sample[router])
+                            power = int(test_sample[router].iloc[0])
 
                             try:
                                 prob_p_given_xybfr = self.power_probability_masks[building][floor][router][power]
@@ -346,7 +339,7 @@ class Model:
                     count_count[building][floor] = 4 ** count
                     distribution_xy_given_bf[building][floor] = (distribution_xy_given_bf[building][floor])
                     normalization_term[building] += distribution_xy_given_bf[building][floor].sum()
-            
+
             # Deprecated categorical prediction
             """
             pred_building = 0

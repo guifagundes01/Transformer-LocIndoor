@@ -107,7 +107,7 @@ if __name__ == "__main__":
     with open('output/model_gen.bin', 'rb') as inp:
         model = pickle.load(inp)
 
-    dataset = dataset.load_ujiindoor_loc(data_folder='data/generated', transform=False)
+    dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
     dataset = dataset.get_floor_data(building=args.building, floor=args.floor, reset_means=True)
 
     x_train, X_test = dataset.get_X()

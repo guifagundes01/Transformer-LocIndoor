@@ -125,8 +125,8 @@ class Augmentation:
                     sample.update({
                         'x': x,
                         'y': y,
-                        'FLOOR': fs[i],
                         'BUILDINGID': bs[i],
+                        'FLOOR': fs[i],
                         'SPACEID': -1,
                         'RELATIVEPOSITION': -1,
                         'USERID': -1,
