@@ -104,7 +104,7 @@ if __name__ == "__main__":
     utils.make_deterministic(args.seed)
 
     Rbf.radial_log_basis_function = radial_log_basis_function
-    with open('output/model_gen.bin', 'rb') as inp:
+    with open('output/model_gen_100.bin', 'rb') as inp:
         model = pickle.load(inp)
 
     dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
