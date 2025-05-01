@@ -2,6 +2,7 @@ import os
 import argparse
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -10,7 +11,7 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 
 from localization.models.rnn import Model
-from localization import dataset, utils
+from localization import utils
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -47,13 +48,17 @@ if __name__ == "__main__":
         print(f'\t{k}: {v}')
 
     utils.make_deterministic(args.seed)
-    data = dataset.load_ujiindoor_loc(data_folder=args.data_folder)
+    train_x = pd.read_csv(args.data_folder + "/trainingData.csv")
+    val_x = pd.read_csv(args.data_folder + "/validationData.csv")
+    columns_to_drop = ["x", "y", "BUILDIINGID", "FLOOR"]
+    y_columns = ["x", "y"]
+    train_y = train_x[y_columns].to_numpy()
+    val_y = val_x[y_columns].to_numpy()
+    train_x = train_x.drop(columns=columns_to_drop).to_numpy()
+    val_x = val_x.drop(columns=columns_to_drop).to_numpy()
 
-    train_x, val_x = data.get_X()
-    train_yn, val_yn = data.get_normalized_y()
-    train_yc, val_yc = data.get_categorical_y()
-    train_y = np.hstack([train_yn, train_yc])
-    val_y = np.hstack([val_yn, val_yc])
+    print(train_x.shape, train_y.shape)
+    print(val_x.shape, val_y.shape)
 
     train_dataset = RSSDataset(train_x, train_y)
     val_dataset = RSSDataset(val_x, val_y)
@@ -62,7 +67,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = Model(train_x.shape[1], 256, 4)
+    model = Model(train_x.shape[1], 256, 2)
     train_loss_history = []
     val_loss_history = []
     min_loss = np.inf

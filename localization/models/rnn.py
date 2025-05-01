@@ -7,12 +7,10 @@ class Model(nn.Module):
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers=num_layers, birectional=True, batch_first=True,
                            dropout=dropout if num_layers > 1 else 0)
         self.fc = nn.Linear(2*hidden_size, output_size)
-        # self.loss_fn = nn.MSELoss()
         # self.softmax = nn.Softmax()
 
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
-        print(x.shape)
         x = self.fc(x)
         # return torch.cat((x[:,0:2], self.softmax(x[:, 0:2])), 1)
         return x
