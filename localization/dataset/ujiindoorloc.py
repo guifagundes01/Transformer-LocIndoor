@@ -87,6 +87,11 @@ class UJIIndoorLoc():
         return self.df_training
 
     def get_categorical_y(self) -> tuple[np.ndarray, np.ndarray]:
+        """Get numpy arrays of Bulding and Floor information
+
+        Returns:
+            (NDArray, NDArray): numpy arrays with Bulding and Floor information for training and validation datasets
+        """
         y_train = np.hstack([(self.df_training['BUILDINGID']).to_numpy().reshape(-1, 1),
                              (self.df_training['FLOOR']).to_numpy().reshape(-1, 1)])
         y_test = np.hstack([(self.df_validation['BUILDINGID']).to_numpy().reshape(-1, 1),
@@ -105,45 +110,38 @@ class UJIIndoorLoc():
             df_test = df_test[df_test['FLOOR'] == floor]
         if phoneid is not None:
             df_train = df_train[df_train['PHONEID'] == phoneid]
-            df_test = df_test[df_test['PHONEID'] == phoneid] 
+            df_test = df_test[df_test['PHONEID'] == phoneid]
 
         return UJIIndoorLoc(df_train, df_test, transform=False)
 
-    def get_normalized_y(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_normalized_y(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Converts Latitude and Longitude to a reference with mean (x,y) = 0
-
-        Args:
-            -df (DataFrame): input DataTrame
-            -mean (float[2]): optional mean to calculate new reference
+        Get train and validation DataFrames with x and y columns only
 
         Returns:
-            -df (DataFrame): output DataFrame
-            -mean (float[2]): mean used to calculate reference
+            -(DataFrame): output DataFrame
 
         """
         normalized_y_train = self._get_normalized_df(self.df_training)
         normalized_y_test = self._get_normalized_df(self.df_validation)
         return normalized_y_train, normalized_y_test
 
-    def get_continuous_y(self):
+    def get_continuous_y(self) -> tuple[np.ndarray, np.ndarray]:
         continuous_columns = ['LATITUDE', 'LONGITUDE']
         return self.df_training[continuous_columns].to_numpy(), self.df_validation[continuous_columns].to_numpy()
 
-    def _get_normalized_df(self, df):
+    def _get_normalized_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Converts Latitude and Longitude to a reference with mean (x,y) = 0
+        Get DataFrame with x and y columns
 
         Args:
             -df (DataFrame): input DataTrame
-            -mean (float[2]): optional mean to calculate new reference
 
         Returns:
             -df (DataFrame): output DataFrame
-            -mean (float[2]): mean used to calculate reference
 
         """
-        return df[['x','y']]
+        return df.loc[:, ['x','y']]
 
     def compute_dimensions(self, points: NDArray):
         hull = ConvexHull(points)
