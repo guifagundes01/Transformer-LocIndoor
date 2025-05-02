@@ -1,5 +1,5 @@
-import os
 import argparse
+from os import path, mkdir
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = Model(train_x.shape[1], 256, 2)
+    model = Model(train_x.shape[1], 256, 2).to(device)
     train_loss_history = []
     val_loss_history = []
     min_loss = np.inf
@@ -78,6 +78,8 @@ if __name__ == "__main__":
     # loss_function = nn.CrossEntropyLoss()
     loss_function = nn.MSELoss()
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
+
+    if not path.exists('output'): mkdir('output')
 
     for epoch in range(args.num_epochs):
         print(f'Epoch {epoch+1}/{args.num_epochs}\n')
@@ -109,7 +111,7 @@ if __name__ == "__main__":
             val_loss_history.append(np.sum(val_loss) / len(val_dataset))
             print('Validation loss: {}\n'.format(val_loss_history[-1]))
 
-        with open(os.path.join(args.out_dir, 'log.txt'), 'a') as f:
+        with open(path.join(args.out_dir, 'log.txt'), 'a') as f:
             f.write(f"Epoch: {epoch+1}/{args.num_epochs}\n")
             f.write(f"      Training loss: {train_loss_history[-1]}\n")
             f.write(f"      Validation loss: {val_loss_history[-1]}\n")
@@ -123,7 +125,7 @@ if __name__ == "__main__":
             min_loss = val_loss_history[-1]
 
             # save model
-            model_path = os.path.join(args.out_dir, 'rnn_model.pth')
+            model_path = path.join(args.out_dir, 'rnn_model.pth')
             best_state_dict = model.state_dict()
             torch.save(best_state_dict, model_path)
 
