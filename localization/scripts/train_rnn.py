@@ -1,5 +1,6 @@
 import argparse
-from os import path, mkdir
+from os import path, makedirs
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -7,8 +8,9 @@ import torch
 from torch import nn
 from tqdm import tqdm
 from torch.optim.adam import Adam
-from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.data.dataset import Dataset
+from torch.utils.tensorboard import SummaryWriter
 
 from localization.models.rnn import Model
 from localization import utils
@@ -79,47 +81,49 @@ if __name__ == "__main__":
     loss_function = nn.MSELoss()
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
 
-    if not path.exists('output'): mkdir('output')
+    if not path.exists(args.out_dir): makedirs(args.out_dir)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    writer = SummaryWriter(f"{args.out_dir}/trainer_{timestamp}")
 
     for epoch in range(args.num_epochs):
         print(f'Epoch {epoch+1}/{args.num_epochs}\n')
 
         # Training
         model.train()
-        train_loss = []
-
-        for batch_idx, (data, labels) in tqdm(enumerate(train_loader), total=len(train_loader)):
+        train_loss = 0
+        for data, labels in tqdm(train_loader, total=len(train_loader)):
             optimizer.zero_grad()
             outputs = model(data)
             loss = loss_function(outputs, labels)
             loss.backward()
             optimizer.step()
-            train_loss.append(loss.item()*len(data))
+            train_loss += loss.item() * len(data)
 
-        train_loss_history.append(np.sum(train_loss) / len(train_dataset))
-        print('Training loss: {}'.format(train_loss_history[-1]))
+        train_loss /= len(train_dataset)
+        train_loss_history.append(train_loss)
+        print(f'Training loss: {train_loss}')
 
         # Validation
         model.eval()
-        val_loss = []
+        val_loss = 0
         with torch.no_grad():
-            for batch_idx, (data, labels) in tqdm(enumerate(val_loader), total=len(val_loader)):
+            for data, labels in tqdm(val_loader, total=len(val_loader)):
                 outputs = model(data)
                 loss = loss_function(outputs, labels)
-                val_loss.append(loss.item()*len(data))
+                val_loss += loss.item() * len(data)
 
-            val_loss_history.append(np.sum(val_loss) / len(val_dataset))
-            print('Validation loss: {}\n'.format(val_loss_history[-1]))
+        val_loss /= len(val_dataset)
+        val_loss_history.append(val_loss)
+        print(f'Validation loss: {val_loss}\n')
 
-        with open(path.join(args.out_dir, 'log.txt'), 'a') as f:
-            f.write(f"Epoch: {epoch+1}/{args.num_epochs}\n")
-            f.write(f"      Training loss: {train_loss_history[-1]}\n")
-            f.write(f"      Validation loss: {val_loss_history[-1]}\n")
-            f.write(f"      Best epoch / loss: {min_epoch+1} / {min_loss}\n")
+        writer.add_scalar(f"Epoch: {epoch+1}/{args.num_epochs}\n",
+                      f"      Training loss: {train_loss}\n",
+                      f"      Validation loss: {val_loss}\n",
+                      f"      Best epoch / loss: {min_epoch+1} / {min_loss}\n")
+        writer.flush()
 
         # model saving
         if min_loss > val_loss_history[-1]:
-
             # update best loss
             min_epoch = epoch
             min_loss = val_loss_history[-1]
@@ -131,7 +135,6 @@ if __name__ == "__main__":
 
         # early stopping
         if len(val_loss_history) >= 2:
-
             if val_loss_history[-1] > min_loss:
               patience_counter+=1
             else:
