@@ -2,9 +2,9 @@
 from torch import nn, Tensor
 
 
-class Model(nn.Module):
+class RNNRegressor(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, output_size=4, num_layers=1, dropout=0.0) -> None:
-        super(Model, self).__init__()
+        super(RNNRegressor, self).__init__()
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers=num_layers, bidirectional=True, batch_first=True,
                            dropout=dropout if num_layers > 1 else 0)
         self.fc = nn.Linear(2*hidden_size, output_size)
