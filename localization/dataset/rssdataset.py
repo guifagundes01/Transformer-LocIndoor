@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import polars as pl
@@ -10,7 +10,7 @@ from torch.utils.data.dataset import Dataset
 
 class RSSDataset(Dataset):
     def __init__(self, file_path: str, device: DeviceLikeType, routers: Optional[NDArray[np.str_]] = None,
-                 cols2drop: Optional[list[str]] = None, y_cols: Optional[list[str]] = None):
+                 cols2drop: Optional[List[str]] = None, y_cols: Optional[List[str]] = None):
         if cols2drop is None:
             cols2drop = ["x", "y", "BUILDINGID", "FLOOR"]
         if y_cols is None:

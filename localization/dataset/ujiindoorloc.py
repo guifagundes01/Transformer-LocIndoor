@@ -1,5 +1,5 @@
 # Author: Alexandre Maranhão <alexandremr01@gmail.com>
-
+from typing import Tuple
 from os import path
 
 import pandas as pd
@@ -27,13 +27,13 @@ class UJIIndoorLoc():
                                                                                    transform)
         self.location_columns = ['LONGITUDE', 'LATITUDE', 'FLOOR', 'BUILDINGID']
 
-    def preprocess(self, df_training, df_validation, transform=True, mix_datasets=False):
+    def preprocess(self, df_training: pd.DataFrame, df_validation, transform=True, mix_datasets=False):
 
         if mix_datasets and transform:
             df = pd.concat([df_training, df_validation])
             df_training, df_validation = train_test_split(df, test_size=0.2, random_state=0)
 
-        input_columns = list(df_training.filter(regex='WAP\d+').columns)
+        input_columns = list(df_training.filter(regex=r'WAP\d+').columns)
 
         df_training = self.drop_rows_without_information(df_training, input_columns)
         df_validation = self.drop_rows_without_information(df_validation, input_columns)
@@ -58,7 +58,7 @@ class UJIIndoorLoc():
         df_training = df_training.drop(columns=columns_without_information_names)
         df_validation = df_validation.drop(columns=columns_without_information_names)
 
-        input_columns = list(df_training.filter(regex='WAP\d+').columns)
+        input_columns = list(df_training.filter(regex=r'WAP\d+').columns)
 
         return df_training, df_validation, input_columns
 
@@ -76,7 +76,7 @@ class UJIIndoorLoc():
             df[input_columns] = df[input_columns] + 105
         return df.copy()
 
-    def get_X(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_X(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.df_training[self.input_columns].to_numpy(), self.df_validation[self.input_columns].to_numpy()
 
     # TODO: deprecate in favor of getX
@@ -86,7 +86,7 @@ class UJIIndoorLoc():
     def get_full_df(self):
         return self.df_training
 
-    def get_categorical_y(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_categorical_y(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get numpy arrays of Bulding and Floor information
 
         Returns:
@@ -114,7 +114,7 @@ class UJIIndoorLoc():
 
         return UJIIndoorLoc(df_train, df_test, transform=False)
 
-    def get_normalized_y(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def get_normalized_y(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Get train and validation DataFrames with x and y columns only
 
@@ -126,7 +126,7 @@ class UJIIndoorLoc():
         normalized_y_test = self._get_normalized_df(self.df_validation)
         return normalized_y_train, normalized_y_test
 
-    def get_continuous_y(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_continuous_y(self) -> Tuple[np.ndarray, np.ndarray]:
         continuous_columns = ['LATITUDE', 'LONGITUDE']
         return self.df_training[continuous_columns].to_numpy(), self.df_validation[continuous_columns].to_numpy()
 
