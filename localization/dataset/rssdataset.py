@@ -5,11 +5,10 @@ import polars as pl
 
 from numpy.typing import NDArray
 from torch import Tensor
-from torch._prims_common import DeviceLikeType
 from torch.utils.data.dataset import Dataset
 
 class RSSDataset(Dataset):
-    def __init__(self, file_path: str, device: DeviceLikeType, routers: Optional[NDArray[np.str_]] = None,
+    def __init__(self, file_path: str, device, routers: Optional[NDArray[np.str_]] = None,
                  cols2drop: Optional[List[str]] = None, y_cols: Optional[List[str]] = None):
         if cols2drop is None:
             cols2drop = ["x", "y", "BUILDINGID", "FLOOR"]
