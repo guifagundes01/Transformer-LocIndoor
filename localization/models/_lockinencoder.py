@@ -2,7 +2,7 @@
 
 from torch import nn
 from ._positionalencoding import PositionalEncoding
-from torch import Tensor,IntTensor,BoolTensor
+from torch import Tensor, IntTensor, BoolTensor
 
 class LockinEncoder(nn.Module):
     def __init__(self, num_embeddings: int, embedding_dim: int, nheads: int, dim_feedforward: int,
@@ -37,7 +37,7 @@ class LockinEncoder(nn.Module):
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
 
         # Initialize positional encoder
-        self.pos_encoder = PositionalEncoding(embedding_dim,embedding_dim,dropout)
+        self.pos_encoder = PositionalEncoding(embedding_dim, embedding_dim, dropout)
 
         # Initialize transformer block
         self.transformer_block = nn.TransformerEncoderLayer(embedding_dim, nheads, dim_feedforward, dropout,

@@ -2,52 +2,19 @@ import argparse
 
 from os import path, makedirs
 from datetime import datetime
-from typing import Optional
 
 import numpy as np
-import polars as pl
 import torch
 
-from numpy.typing import NDArray
 from tqdm import tqdm
 from torch import nn
-from torch._prims_common import DeviceLikeType
 from torch.optim.adam import Adam
 from torch.utils.data import DataLoader
-from torch.utils.data.dataset import Dataset
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from localization.models import RNNRegressor
+from localization.dataset import RSSDataset
 from localization import utils
-
-class RSSDataset(Dataset):
-    def __init__(self, file_path: str, device: DeviceLikeType, routers: Optional[NDArray[np.str_]] = None,
-                 cols2drop: Optional[list[str]] = None, y_cols: Optional[list[str]] = None):
-        if cols2drop is None:
-            cols2drop = ["x", "y", "BUILDINGID", "FLOOR"]
-        if y_cols is None:
-            y_cols = ["x", "y"]
-
-        x = pl.read_csv(file_path).unique()
-        if routers is None:
-            routers_cols = list(set(x.columns) - set(["x", "y", "BUILDINGID", "FLOOR"]))
-            mask = ((x[routers_cols] == 0).sum() != x.shape[0]).to_numpy()[0]
-            self.routers: NDArray[np.str_] = np.array(routers_cols)[mask]
-        else:
-            self.routers = routers
-
-        self.y = x[y_cols].to_numpy()
-        self.x = x.drop(cols2drop)[self.routers].to_numpy()
-        self.device = device
-
-    def __getitem__(self, index: int):
-        x = torch.Tensor(self.x[index]).to(self.device)
-        y = torch.Tensor(self.y[index]).to(self.device)
-        return (x, y)
-
-    def __len__(self):
-        count = self.x.shape[0]
-        return count
 
 
 if __name__ == "__main__":
@@ -69,14 +36,14 @@ if __name__ == "__main__":
     utils.make_deterministic(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_dataset = RSSDataset(args.data_folder + "/trainingData.csv", device)
-    val_dataset = RSSDataset(args.data_folder + "/validationData.csv", device, train_dataset.routers)
+    train_dataset = RSSDataset(f"{args.data_folder}/trainingData.csv", device)
+    val_dataset = RSSDataset(f"{args.data_folder}/validationData.csv", device, train_dataset.routers)
 
     # weights = torch.Tensor(train_y.sum() / train_y.sum(axis=0)).to(device)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    model = RNNRegressor(train_dataset.x.shape[1], 256, 2).to(device)
+    model = RNNRegressor(len(train_dataset.routers), 256, 2).to(device)
     min_loss = np.inf
     min_epoch = -1
     patience_counter = 0
