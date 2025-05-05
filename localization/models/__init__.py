@@ -6,4 +6,4 @@ from ._positionalencoding import PositionalEncoding
 from ._lockinencoder import LockinEncoder
 from ._normalizer import Normalizer
 
-from .rnn import RNNRegressor, RNNRegressorEmb
+from localization.models.rnn import RNNRegressor, RNNRegressorEmb

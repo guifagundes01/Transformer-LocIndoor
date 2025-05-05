@@ -1,13 +1,14 @@
 import numpy as np
+from numpy._typing import NDArray
 
 class RankingBased:
-    def __init__(self):
-        None
+    # def __init__(self):
+    #     None
 
-    def transform(self, X, null_element=0, default_value=-1):
+    def transform(self, X: NDArray, null_element=0, default_value=-1):
         return np.apply_along_axis(lambda row: self.get_ranking(row, null_element, default_value), 1, X)
 
-    def get_ranking(self, rss, null_element, default_value=-1):
+    def get_ranking(self, rss: NDArray, null_element=0, default_value=-1):
         # the strongest to the weakest AP
         ix = np.argsort(rss)[::-1]
         # index of first null element

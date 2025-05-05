@@ -127,11 +127,11 @@ class Augmentation:
                         'y': y,
                         'BUILDINGID': bs[i],
                         'FLOOR': fs[i],
-                        'SPACEID': -1,
-                        'RELATIVEPOSITION': -1,
-                        'USERID': -1,
-                        'PHONEID': -1,
-                        'TIMESTAMP': -1,
+                        # 'SPACEID': -1,
+                        # 'RELATIVEPOSITION': -1,
+                        # 'USERID': -1,
+                        # 'PHONEID': -1,
+                        # 'TIMESTAMP': -1,
                     })
                 augmented_data.append(sample)
 

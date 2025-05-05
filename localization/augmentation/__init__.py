@@ -1,1 +1,2 @@
 from localization.augmentation.augmentation import PowerAverages
+from localization.augmentation.augmentation_rbf_model import Augmentation
