@@ -38,6 +38,7 @@ if __name__ == "__main__":
 
     train_dataset = RSSDataset(f"{args.data_folder}/trainingData.csv", device)
     val_dataset = RSSDataset(f"{args.data_folder}/validationData.csv", device, train_dataset.routers)
+    np.save(args.r_path, train_dataset.routers)
 
     # weights = torch.Tensor(train_y.sum() / train_y.sum(axis=0)).to(device)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
