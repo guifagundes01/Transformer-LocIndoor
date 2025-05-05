@@ -35,6 +35,7 @@ if __name__ == "__main__":
 
     utils.make_deterministic(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Device: {device}")
 
     train_dataset = RSSDataset(f"{args.data_folder}/trainingData.csv", device)
     val_dataset = RSSDataset(f"{args.data_folder}/validationData.csv", device, train_dataset.routers)
