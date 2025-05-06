@@ -1,4 +1,5 @@
-from torch import nn, Tensor
+import torch
+from torch import IntTensor, nn, Tensor
 from torch.nn.utils.rnn import pack_padded_sequence
 
 
@@ -7,7 +8,11 @@ class RNNRegressor(nn.Module):
         super(RNNRegressor, self).__init__()
         self.rnn = nn.LSTM(input_dim, hidden_size, num_layers=num_layers, bidirectional=True,
                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
-        self.fc = nn.Linear(2*hidden_size, output_dim)
+        self.fc = nn.Sequential(
+                nn.Linear(2*hidden_size, hidden_size // 4),
+                nn.ReLU(),
+                nn.Linear(hidden_size // 4, output_dim)
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
@@ -24,9 +29,11 @@ class RNNRegressorEmb(nn.Module):
                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
         self.fc = nn.Linear(2*hidden_size, output_dim)
 
-    def forward(self, x: Tensor, lenghts: Tensor) -> Tensor:
+    def forward(self, x: IntTensor, lenghts: Tensor) -> Tensor:
+        print(x)
         embedded = self.embedding(x)
-        packed = pack_padded_sequence(embedded, lenghts.cpu(), batch_first=True)
+        packed = pack_padded_sequence(embedded, lenghts.cpu(), batch_first=True, enforce_sorted=False)
         _, (h_n, _) = self.rnn(packed)
-        return self.fc(h_n[-1])
+        h_nc = torch.cat((h_n[0], h_n[1]), dim=1)
+        return self.fc(h_nc)
 

@@ -11,7 +11,7 @@ class LangDataset(Dataset):
 
     def __getitem__(self, index: int):
         ins, out = self.data[index]
-        seq = torch.tensor(ins, dtype=torch.int8).to(self.device)
+        seq = torch.tensor(ins, dtype=torch.int32).to(self.device)
         target = torch.tensor(out, dtype=torch.float32).to(self.device)
         return seq, target
 

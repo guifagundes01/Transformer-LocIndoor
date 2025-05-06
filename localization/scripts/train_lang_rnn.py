@@ -33,8 +33,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
     parser.add_argument('-p', '--patience', type=int, default=15, help='Patience')
     parser.add_argument('-f', '--data_folder', type=str, default="data/generated", help='Data folder')
-    parser.add_argument('-d', '--out_dir', type=str, default="output/rnn", help='Output folder')
-    parser.add_argument('-r', '--r_path', type=str, default="data/routers.npy", help='File to used routers')
+    parser.add_argument('-o', '--out_dir', type=str, default="output/rnn", help='Output folder')
 
     args = parser.parse_args()
     print('Args:')
