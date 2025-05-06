@@ -8,11 +8,7 @@ class RNNRegressor(nn.Module):
         super(RNNRegressor, self).__init__()
         self.rnn = nn.LSTM(input_dim, hidden_size, num_layers=num_layers, bidirectional=True,
                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
-        self.fc = nn.Sequential(
-                nn.Linear(2*hidden_size, hidden_size // 4),
-                nn.ReLU(),
-                nn.Linear(hidden_size // 4, output_dim)
-        )
+        self.fc = nn.Linear(2*hidden_size, output_dim)
 
     def forward(self, x: Tensor) -> Tensor:
         x, _ = self.rnn(x)
@@ -28,6 +24,11 @@ class RNNRegressorEmb(nn.Module):
         self.rnn = nn.LSTM(embedding_dim, hidden_size, num_layers=num_layers, bidirectional=True,
                            batch_first=True, dropout=dropout if num_layers > 1 else 0)
         self.fc = nn.Linear(2*hidden_size, output_dim)
+        # self.fc = nn.Sequential(
+        #         nn.Linear(2*hidden_size, hidden_size // 4),
+        #         nn.ReLU(),
+        #         nn.Linear(hidden_size // 4, output_dim)
+        # )
 
     def forward(self, x: IntTensor, lenghts: Tensor) -> Tensor:
         embedded = self.embedding(x)
