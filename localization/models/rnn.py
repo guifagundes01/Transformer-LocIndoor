@@ -30,7 +30,6 @@ class RNNRegressorEmb(nn.Module):
         self.fc = nn.Linear(2*hidden_size, output_dim)
 
     def forward(self, x: IntTensor, lenghts: Tensor) -> Tensor:
-        print(x)
         embedded = self.embedding(x)
         packed = pack_padded_sequence(embedded, lenghts.cpu(), batch_first=True, enforce_sorted=False)
         _, (h_n, _) = self.rnn(packed)
