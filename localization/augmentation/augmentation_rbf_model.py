@@ -141,6 +141,74 @@ class Augmentation:
             train_df.to_csv(f'{data_dir}/trainingData.csv', index=False, mode='a', header=False)
             test_df.to_csv(f'{data_dir}/validationData.csv', index=False, mode='a', header=False)
 
+    def generate_augmented_data_batched_for_bf(self, num_samples_per_floor=100, batch_size=10, test_size=0.1, data_dir="data/generated", building=0, floor=0):
+        """
+        Generate augmented WiFi fingerprints using power_probability_masks and power_prior_probability_distribution.
+
+        Args:
+            num_samples_per_floor: Number of augmented samples to generate per floor.
+            batch_size: Number of samples to generate in each batch.
+            data_dir: Directory to save the generated data.
+
+        Returns:
+            pd.DataFrame: augmented data with columns for building, floor, coordinates, and router powers.
+        """
+
+        num_batches = num_samples_per_floor // batch_size
+        # y_columns = ["LATITUDE", "LONGITUDE", "x", "y"]
+        y_columns = ["x", "y"]
+        metadata_columns = ["BUILDINGID", "FLOOR", "SPACEID", "RELATIVEPOSITION", "USERID", "PHONEID", "TIMESTAMP"]
+        generated_data = pd.DataFrame(columns=self.routers + y_columns + metadata_columns)
+        if not path.exists(data_dir): mkdir(data_dir)
+        generated_data.to_csv(f'{data_dir}/trainingData_b{building}f{floor}.csv', index=False)
+        generated_data.to_csv(f'{data_dir}/validationData_b{building}f{floor}.csv', index=False)
+
+        for _ in trange(num_batches):
+            augmented_data = []
+            for _ in range(batch_size):
+                routers = list(self.model.power_probability_masks[building][floor].keys())
+                # Sample a valid (x, y) location from the building's grid
+                valid_indices = np.arange(len(self.model.x_building[building]))
+                loc_idx = self.rng.choice(valid_indices)
+                x, y = self.model.x_building[building][loc_idx], self.model.y_building[building][loc_idx]
+                sample = {wap: 0.0 for wap in self.routers}
+
+                for router in routers:
+                    # Get the probability distribution of powers for this router at (x, y)
+                    p_xy_given_bfrp = self.model.power_probability_masks[building][floor][router]
+                    p_p = self.model.power_prior_probability_distribution[building][floor][router]
+                    powers = list(p_xy_given_bfrp.keys())
+                    probs = [p_xy_given_bfrp[p][loc_idx] * p_p[p] * len(self.model.x_building[building]) for p in powers]  # Bayes
+                    # probs = [power_probs[p][loc_idx] for p in powers]  # P(power | x, y)
+
+                    probs = np.clip(probs, 0, None)  # Replace negatives with 0
+                    epsilon = 1e-5
+                    probs += epsilon
+                    probs = probs / np.sum(probs)     # Renormalize
+
+                    # Sample a power value
+                    power = self.rng.choice(powers, p=probs)
+                    sample[router] = power
+
+                    sample.update({
+                        'x': x,
+                        'y': y,
+                        # 'BUILDINGID': building,
+                        # 'FLOOR': floor,
+                        # 'SPACEID': -1,
+                        # 'RELATIVEPOSITION': -1,
+                        # 'USERID': -1,
+                        # 'PHONEID': -1,
+                        # 'TIMESTAMP': -1,
+                    })
+                augmented_data.append(sample)
+
+            augmented_data = pd.DataFrame(augmented_data)
+            train_df, test_df = train_test_split(augmented_data, test_size=test_size)
+
+            train_df.to_csv(f'{data_dir}/trainingData_b{building}f{floor}.csv', index=False, mode='a', header=False)
+            test_df.to_csv(f'{data_dir}/validationData_b{building}f{floor}.csv', index=False, mode='a', header=False)
+
     def generate_batched_augmented_data_w_parameters(self, num_samples=100, batch_size=10, test_size=0.1, data_dir='data/generated'):
         """
         Generate augmented WiFi fingerprints using mu and phi rbf models.
