@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from localization import utils
-from localization.utils.constants import NUM_ROUTERS, NUM_SPECIAL_TOKENS, PADDING_IDX
+from localization.utils.constants import NUM_ROUTERS, NUM_SPECIAL_TOKENS, PADDING_IDX, SOS_IDX, SRC_DIM
 from localization.models import RNNRegressorEmb
 from localization.dataset import LangDataset
 
@@ -24,10 +24,10 @@ from localization.dataset import LangDataset
 #     padded_seqs = nn.utils.rnn.pad_sequence(sequences, batch_first=True, padding_value=PADDING_IDX)
 #     return padded_seqs, torch.stack(targets), lengths
 
-def collate_fn(batch):
-    sequences, targets = zip(*batch)
-    padded_seqs = nn.utils.rnn.pad_sequence(sequences, batch_first=True, padding_value=PADDING_IDX)
-    return padded_seqs, torch.stack(targets)
+# def collate_fn(batch):
+#     sequences, targets = zip(*batch)
+#     padded_seqs = nn.utils.rnn.pad_sequence(sequences, batch_first=True, padding_value=PADDING_IDX)
+#     return padded_seqs, torch.stack(targets)
 
 
 if __name__ == "__main__":
@@ -49,12 +49,13 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
 
-    train_dataset = LangDataset(f"{args.data_folder}/trainingDataL.pt", device)
-    val_dataset = LangDataset(f"{args.data_folder}/validationDataL.pt", device)
+    train_dataset = LangDataset(f"{args.data_folder}/trainingDataL.pt", device,
+                                SRC_DIM, SOS_IDX, PADDING_IDX)
+    val_dataset = LangDataset(f"{args.data_folder}/validationDataL.pt", device,
+                              SRC_DIM, SOS_IDX, PADDING_IDX)
 
-    # weights = torch.Tensor(train_y.sum() / train_y.sum(axis=0)).to(device)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     model = RNNRegressorEmb(vocab_size=NUM_ROUTERS + NUM_SPECIAL_TOKENS,
                             embedding_dim=64, hidden_size=256).to(device)

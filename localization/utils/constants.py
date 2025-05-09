@@ -4,10 +4,11 @@ import numpy as np
 NUM_ROUTERS = 520
 
 # Number of Special Tokens (0->[PAD]/1->[MASK])
-# Number of Special Tokens (0->[PAD])
-NUM_SPECIAL_TOKENS = 1
+# Number of Special Tokens (0->[PAD]/521->[SOS])
+NUM_SPECIAL_TOKENS = 2
 PADDING_IDX = 0
-CLS_IDX = NUM_ROUTERS + 1
+SOS_IDX = NUM_ROUTERS + 1
+SRC_DIM = 20
 
 # ID of each router present in the Training Data
 TRAIN_ROUTER_IDS = np.array([ 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
