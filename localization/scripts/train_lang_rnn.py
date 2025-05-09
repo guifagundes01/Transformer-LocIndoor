@@ -18,11 +18,16 @@ from localization.models import RNNRegressorEmb
 from localization.dataset import LangDataset
 
 
+# def collate_fn(batch):
+#     sequences, targets = zip(*batch)
+#     lengths = torch.tensor([len(seq) for seq in sequences])
+#     padded_seqs = nn.utils.rnn.pad_sequence(sequences, batch_first=True, padding_value=PADDING_IDX)
+#     return padded_seqs, torch.stack(targets), lengths
+
 def collate_fn(batch):
     sequences, targets = zip(*batch)
-    lengths = torch.tensor([len(seq) for seq in sequences])
     padded_seqs = nn.utils.rnn.pad_sequence(sequences, batch_first=True, padding_value=PADDING_IDX)
-    return padded_seqs, torch.stack(targets), lengths
+    return padded_seqs, torch.stack(targets)
 
 
 if __name__ == "__main__":
@@ -72,8 +77,8 @@ if __name__ == "__main__":
         # Training
         model.train()
         train_loss = 0
-        for sequences, targets, lengths in tqdm(train_loader):
-            outputs = model(sequences, lengths)
+        for sequences, targets in tqdm(train_loader):
+            outputs = model(sequences)
             loss = loss_function(outputs, targets)
 
             optimizer.zero_grad()
@@ -88,8 +93,8 @@ if __name__ == "__main__":
         model.eval()
         val_loss = 0
         with torch.no_grad():
-            for sequences, targets, lengths in tqdm(val_loader):
-                outputs = model(sequences, lengths)
+            for sequences, targets in tqdm(val_loader):
+                outputs = model(sequences)
                 loss = loss_function(outputs, targets)
                 val_loss += loss.item() * len(sequences)
 

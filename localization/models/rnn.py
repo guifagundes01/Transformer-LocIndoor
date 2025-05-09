@@ -1,6 +1,5 @@
 import torch
 from torch import IntTensor, nn, Tensor
-from torch.nn.utils.rnn import pack_padded_sequence
 
 
 class RNNRegressor(nn.Module):
@@ -30,10 +29,16 @@ class RNNRegressorEmb(nn.Module):
         #         nn.Linear(hidden_size // 4, output_dim)
         # )
 
-    def forward(self, x: IntTensor, lenghts: Tensor) -> Tensor:
+    # def forward(self, x: IntTensor, lenghts: Tensor) -> Tensor:
+    #     embedded = self.embedding(x)
+    #     packed = nn.utils.rnn.pack_padded_sequence(embedded, lenghts.cpu(), batch_first=True, enforce_sorted=False)
+    #     _, (h_n, _) = self.rnn(packed)
+    #     h_nc = torch.cat((h_n[0], h_n[1]), dim=1)
+    #     return self.fc(h_nc)
+
+    def forward(self, x: IntTensor) -> Tensor:
         embedded = self.embedding(x)
-        packed = pack_padded_sequence(embedded, lenghts.cpu(), batch_first=True, enforce_sorted=False)
-        _, (h_n, _) = self.rnn(packed)
+        _, (h_n, _) = self.rnn(embedded)
         h_nc = torch.cat((h_n[0], h_n[1]), dim=1)
         return self.fc(h_nc)
 
