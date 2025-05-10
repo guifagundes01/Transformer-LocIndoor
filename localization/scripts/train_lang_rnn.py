@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from localization import utils
-from localization.utils.constants import NUM_ROUTERS, NUM_SPECIAL_TOKENS, PADDING_IDX, SOS_IDX, SRC_DIM
+from localization.utils.constants import NUM_ROUTERS, NUM_SPECIAL_TOKENS, PADDING_IDX, SOS_IDX
 from localization.models import RNNRegressorEmb
 from localization.dataset import LangDataset
 
@@ -37,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--num_epochs', type=int, default=100, help='Number of epochs')
     parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
     parser.add_argument('-p', '--patience', type=int, default=15, help='Patience')
+    parser.add_argument('-s', '--src_dim', type=int, default=20, help='Source dimension')
     parser.add_argument('-f', '--data_folder', type=str, default="data/generated", help='Data folder')
     parser.add_argument('-o', '--out_dir', type=str, default="output/rnn", help='Output folder')
 
@@ -50,9 +51,9 @@ if __name__ == "__main__":
     print(f"Device: {device}")
 
     train_dataset = LangDataset(f"{args.data_folder}/trainingDataL.pt", device,
-                                SRC_DIM, SOS_IDX, PADDING_IDX)
+                                args.src_dim, SOS_IDX, PADDING_IDX)
     val_dataset = LangDataset(f"{args.data_folder}/validationDataL.pt", device,
-                              SRC_DIM, SOS_IDX, PADDING_IDX)
+                              args.src_dim, SOS_IDX, PADDING_IDX)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
