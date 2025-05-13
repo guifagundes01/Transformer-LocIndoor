@@ -139,5 +139,5 @@ if __name__ == "__main__":
     results += f"P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}\n"
     results += "Removing the discrete position errors:"
     print('End of execution')
-    with open(f"output/results_{args.model_name}.txt") as out_file:
+    with open(f"output/{args.model_name}/results_b{args.building}f{args.floor}.txt") as out_file:
         out_file.write(results)
