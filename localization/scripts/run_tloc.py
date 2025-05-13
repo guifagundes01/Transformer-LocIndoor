@@ -3,9 +3,7 @@ import argparse
 import time
 
 import numpy as np
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
 from sklearn.multioutput import MultiOutputClassifier
 from scipy.interpolate import Rbf
 
@@ -65,7 +63,7 @@ def evaluate_categorical_location_model(model, x_test, y_test):
     elapsed_seconds = (end_time - start_time)
     return score, correct_indexes, elapsed_seconds
 
-def error_plot(data):
+def error_plot(data, name, b, f):
     import matplotlib.pyplot as plt
     # try:
     #     import scienceplots
@@ -75,6 +73,8 @@ def error_plot(data):
 
     scores = data
     threshold = np.percentile(distances, 90)
+    if b is None: b = "all"
+    if f is None: f = "all"
 
     plt.figure()
     plt.scatter(range(len(scores)),scores,c=~np.array([scores <= threshold]),cmap="bwr", s=2)
@@ -84,8 +84,8 @@ def error_plot(data):
     plt.ylabel('Absolute Error')
     plt.grid(True)
     plt.legend()
-    plt.savefig("figures/outliers-gen")
-    plt.show()
+    plt.savefig(f"figures/outliers_{name}_b{b}f{f}")
+    # plt.show()
 
 def radial_log_basis_function(self, r):
     return np.log(r + self.epsilon)
@@ -95,6 +95,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=33, help='Random seed')
     parser.add_argument('-b','--building', type=int, default=None, help='Building')
     parser.add_argument('-f', '--floor', type=int, default=None, help='Random seed')
+    parser.add_argument('-m', '--model_name', type=str, default="model_gen_100", help='specification of the model')
     args = parser.parse_args()
 
     print('Args:')
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     utils.make_deterministic(args.seed)
 
     Rbf.radial_log_basis_function = radial_log_basis_function
-    with open('output/model_gen_100.bin', 'rb') as inp:
+    with open(f'output/{args.model_name}.bin', 'rb') as inp:
         model = pickle.load(inp)
 
     dataset = dataset.load_ujiindoor_loc(data_folder='data/filtered')
@@ -118,18 +119,25 @@ if __name__ == "__main__":
     score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, X_test, y_test)
     print('Building and floor accuracy:', np.round(100 * score, 2))
     print('Prediction time:', np.round(elapsed_time, 2), 's\n')
+    results = f"Building and floor accuracy: {np.round(100 * score, 2)}\nPrediction time: {np.round(elapsed_time, 2)} s\n"
 
     distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_test)
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Removing the discrete position errors:')
+    results += f"Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, "
+    results += f"P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}\n"
+    results += "Removing the discrete position errors:"
 
-    error_plot(distances)
+    error_plot(distances, args.model_name, args.building, args.floor)
 
     distances = distances[correct_indexes]
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Prediction time:', np.round(elapsed_time, 2), 's')
+    results += f"Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, "
+    results += f"P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}\n"
+    results += "Removing the discrete position errors:"
     print('End of execution')
-
-    
+    with open(f"output/results_{args.model_name}.txt") as out_file:
+        out_file.write(results)
