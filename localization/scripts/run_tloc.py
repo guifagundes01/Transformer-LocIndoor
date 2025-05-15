@@ -1,6 +1,7 @@
 import pickle
 import argparse
 import time
+import os
 
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
@@ -73,8 +74,6 @@ def error_plot(data, name, b, f):
 
     scores = data
     threshold = np.percentile(distances, 90)
-    if b is None: b = "all"
-    if f is None: f = "all"
 
     plt.figure()
     plt.scatter(range(len(scores)),scores,c=~np.array([scores <= threshold]),cmap="bwr", s=2)
@@ -83,7 +82,7 @@ def error_plot(data, name, b, f):
     plt.xlabel('Index')
     plt.ylabel('Absolute Error')
     plt.grid(True)
-    plt.legend()
+    # plt.legend()
     plt.savefig(f"figures/outliers_{name}_b{b}f{f}")
     # plt.show()
 
@@ -117,27 +116,29 @@ if __name__ == "__main__":
 
     discrete_location_model = train_discrete_location_model(x_train, y_train, 'euclidean', 3)
     score, correct_indexes, elapsed_time = evaluate_categorical_location_model(discrete_location_model, X_test, y_test)
+    file_name = f"output/{args.model_name}/results.csv"
+    if not os.path.exists(file_name):
+        with open(file_name, "w") as out_file:
+            out_file.write("accuracy,time,mean_error,median_error,P90,P95,mean_error_wod,median_error_wod,P90_wod,P95_wod,building,floor")
     print('Building and floor accuracy:', np.round(100 * score, 2))
     print('Prediction time:', np.round(elapsed_time, 2), 's\n')
-    results = f"Building and floor accuracy: {np.round(100 * score, 2)}\nPrediction time: {np.round(elapsed_time, 2)} s\n"
+    results = f"{np.round(100 * score, 2)},{np.round(elapsed_time, 2)},"
 
     distances, elapsed_time = evaluate_model(model, discrete_location_model, dataset, y_continuous_test)
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Removing the discrete position errors:')
-    results += f"Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, "
-    results += f"P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}\n"
-    results += "Removing the discrete position errors:"
+    results += f"{np.mean(distances):.2f},{np.median(distances):.2f},{np.percentile(distances, 90):.2f},{np.percentile(distances, 95):.2f},"
 
-    error_plot(distances, args.model_name, args.building, args.floor)
+    b = "all" if args.building is None else args.building
+    f = "all" if args.floor is None else args.floor
+    error_plot(distances, args.model_name, b, f)
 
     distances = distances[correct_indexes]
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Prediction time:', np.round(elapsed_time, 2), 's')
-    results += f"Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, "
-    results += f"P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}\n"
-    results += "Removing the discrete position errors:"
+    results += f"{np.mean(distances):.2f},{np.median(distances):.2f},{np.percentile(distances, 90):.2f},{np.percentile(distances, 95):.2f},{b},{f}"
     print('End of execution')
-    with open(f"output/{args.model_name}/results_b{args.building}f{args.floor}.txt") as out_file:
+    with open(file_name, "a") as out_file:
         out_file.write(results)
