@@ -119,7 +119,7 @@ if __name__ == "__main__":
     file_name = f"output/{args.model_name}/results.csv"
     if not os.path.exists(file_name):
         with open(file_name, "w") as out_file:
-            out_file.write("accuracy,time,mean_error,median_error,P90,P95,mean_error_wod,median_error_wod,P90_wod,P95_wod,building,floor")
+            out_file.write("accuracy,time,mean_error,median_error,P90,P95,mean_error_wod,median_error_wod,P90_wod,P95_wod,building,floor\n")
     print('Building and floor accuracy:', np.round(100 * score, 2))
     print('Prediction time:', np.round(elapsed_time, 2), 's\n')
     results = f"{np.round(100 * score, 2)},{np.round(elapsed_time, 2)},"
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     print(f'Mean error = {np.mean(distances):.2f}, median error = {np.median(distances):.2f}, '
           f'P90 = {np.percentile(distances, 90):.2f}, P95 = {np.percentile(distances, 95):.2f}')
     print('Prediction time:', np.round(elapsed_time, 2), 's')
-    results += f"{np.mean(distances):.2f},{np.median(distances):.2f},{np.percentile(distances, 90):.2f},{np.percentile(distances, 95):.2f},{b},{f}"
+    results += f"{np.mean(distances):.2f},{np.median(distances):.2f},{np.percentile(distances, 90):.2f},{np.percentile(distances, 95):.2f},{b},{f}\n"
     print('End of execution')
     with open(file_name, "a") as out_file:
         out_file.write(results)
