@@ -26,6 +26,8 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
     parser.add_argument('-p', '--prob', type=float, default=0.4, help='Probability of add a wrong router')
     parser.add_argument('-s', '--src_dim', type=int, default=20, help='Source dimension')
+    parser.add_argument('-e', '--embedding_dim', type=int, default=256, help='Embedding dimension')
+    parser.add_argument('-h', '--hidden_size', type=int, default=32, help='Hidden size')
     parser.add_argument('-f', '--data_folder', type=str, default="data/generated", help='Data folder')
     parser.add_argument('-o', '--out_dir', type=str, default="output/rnn", help='Output folder')
 
@@ -39,21 +41,24 @@ if __name__ == "__main__":
     print(f"Device: {device}")
 
     train_dataset = LangMaskDataset(f"{args.data_folder}/trainingDataL.pt", device,
-                                    args.src_dim, NUM_ROUTERS+1, SOS_IDX, PADDING_IDX, args.prob)
+                                    args.src_dim, NUM_ROUTERS, SOS_IDX, PADDING_IDX, args.prob)
     val_dataset = LangMaskDataset(f"{args.data_folder}/validationDataL.pt", device,
-                                  args.src_dim, NUM_ROUTERS+1, SOS_IDX, PADDING_IDX, args.prob)
+                                  args.src_dim, NUM_ROUTERS, SOS_IDX, PADDING_IDX, args.prob)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    weights = len(train_dataset) / train_dataset.targets.bincount()
 
     model = RNNRegressorEmb(vocab_size=NUM_ROUTERS + NUM_SPECIAL_TOKENS,
-                            embedding_dim=64, hidden_size=256).to(device)
+                            embedding_dim=args.embedding_dim, hidden_size=args.hidden_size,
+                            output_dim=NUM_ROUTERS + 1,
+                            padding_id=PADDING_IDX).to(device)
     min_loss = np.inf
     min_epoch = -1
     patience_counter = 0
 
     # loss_function = nn.L1Loss()
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.CrossEntropyLoss(weight=weights)
     # loss_function = nn.MSELoss()
     optimizer = Adam(model.parameters(), lr=args.learning_rate)
 
