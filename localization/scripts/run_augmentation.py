@@ -22,6 +22,10 @@ if __name__ == "__main__":
     parser.add_argument('-f','--floor', type=int, default=None, help='Floor number')
     args = parser.parse_args()
 
+    print('Args:')
+    for k, v in sorted(vars(args).items()):
+        print('\t{}: {}'.format(k, v))
+
     data = dataset.load_ujiindoor_loc("data/filtered")
 
     Rbf.radial_log_basis_function = radial_log_basis_function

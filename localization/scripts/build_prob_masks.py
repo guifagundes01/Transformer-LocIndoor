@@ -1,12 +1,13 @@
 import argparse
 import pickle
+import json
+import os
 
 import numpy as np
-from tqdm import tqdm
+from tqdm import trange
 from scipy.interpolate import Rbf
 
-from localization.models.rbf_model import Model
-from localization import utils, dataset
+from localization import utils
 
 
 def radial_log_basis_function(model, r):
@@ -24,46 +25,43 @@ if __name__ == "__main__":
 
     utils.make_deterministic(args.seed)
 
+    data_dir = f"data/probs-{args.size}/"
+    num_buildings = 3
+    num_floors_in_each_building = {0: 4,
+                                    1: 4,
+                                    2: 5}
     Rbf.radial_log_basis_function = radial_log_basis_function
-    with open('output/filtered_model.bin', 'rb') as inp:
-        model: Model = pickle.load(inp)
 
-    grid_size = args.size
-    data_dir = f"data/generated-{grid_size}/"
+    os.makedirs(data_dir, exist_ok=True)
+    for building in range(num_buildings):
+        for floor in trange(num_floors_in_each_building[building]):
 
+            with open(f'output/filtered_model_{args.size}.bin', 'rb') as inp:
+                model = pickle.load(inp)
+            routers = list(model.power_probability_masks[building][floor].keys())
+            x_size = len(model.x_building[building])
+            valid_indices = np.arange(x_size)
+            power_probability_masks = model.power_probability_masks[building][floor]
+            power_prior_probability_distribution = model.power_prior_probability_distribution[building][floor]
+            del model
 
-    data = dataset.load_ujiindoor_loc(data_folder='data/filtered')
-    model.grid_size_in_each_dimension_in_each_building = grid_size
-    for building in range(model.num_buildings):
-        x_building, y_building = model.construct_building_map(data, building)
-        model.x_building[building] = x_building
-        model.y_building[building] = y_building
+            power_distribution = []
+            for idx in valid_indices:
+                router_distribution = {}
+                for router in routers:
+                    # Get the probability distribution of powers for this router at (x, y)
+                    p_xy_given_bfrp = power_probability_masks[router]
+                    p_p = power_prior_probability_distribution[router]
+                    powers = list(p_xy_given_bfrp.keys())
+                    probs = np.array([p_xy_given_bfrp[p][idx] * p_p[p] * x_size for p in powers], np.float64)  # Bayes
+                    # probs = [power_probs[p][loc_idx] for p in powers]  # P(power | x, y)
 
-        for floor in tqdm(range(model.num_floors_in_each_building[building])):
-            filtered_dataset = data.get_floor_data(building=building, floor=floor)
-            X_train = filtered_dataset.get_full_df()
-            routers = model.get_all_routers_in_this_floor(X_train.columns)
+                    probs = np.clip(probs, 0, None)  # Replace negatives with 0
+                    epsilon = 1e-5
+                    probs += epsilon
+                    probs = probs / np.sum(probs)     # Renormalize
+                    router_distribution[router] = probs.tolist()
+                power_distribution.append(router_distribution)
 
-            for router in routers:
-                if model.checking_non_null_minimum_percentage_of_samples(X_train, router):
-                    model.power_probability_masks[building][floor][router] = {}
-                    mu_building = model.mu_rbf[building][floor][router](x_building, y_building)
-                    phi_building =  model.phi_rbf[building][floor][router](x_building, y_building)
-
-                    for power in range(0, model.max_power):
-                        model.power_probability_masks[building][floor][router][
-                            power] = model.approximate_position_density_function_given_router(power, mu_building,
-                                                                                             phi_building)
-
-    model_data = {
-        "x_building": model.x_building,
-        "y_building": model.y_building,
-        "power_probability_masks": model.power_probability_masks,
-        "power_prior_probability_distribution": model.power_prior_probability_distribution,
-    }
-
-    with open(f'output/model_data_filtered_{grid_size}.bin', 'wb') as outp:
-        pickle.dump(model_data, outp, pickle.HIGHEST_PROTOCOL)
-
-    # with open(f'output/model_filtered_{grid_size}.bin', 'wb') as outp:
-    #     pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
+            with open(f"{data_dir}/power_distribution_building_{building}_floor_{floor}.json", "w") as f:
+                json.dump(power_distribution, f)
