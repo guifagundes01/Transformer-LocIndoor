@@ -11,6 +11,7 @@ from torch import nn
 from torch.optim.adam import Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 from localization import utils
 from localization.utils.constants import NUM_ROUTERS, NUM_SPECIAL_TOKENS, PADDING_IDX, SOS_IDX
@@ -123,3 +124,38 @@ if __name__ == "__main__":
 
     print('Training done!')
     writer.close()
+
+    test_dataset = LangDataset("data/test.pt", device, args.src_dim, SOS_IDX, PADDING_IDX)
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+
+    y_pred = np.empty((0, 2))
+    y_test = np.empty((0, 2))
+    model.eval()
+    with torch.no_grad():
+        for sequences, targets in tqdm(test_loader):
+            outputs = model(sequences)
+            yp = outputs.cpu().numpy()
+            yt = targets.cpu().numpy()
+            y_pred = np.concatenate((y_pred, yp))
+            y_test = np.concatenate((y_test, yt))
+
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_test, y_pred)
+
+
+    with open(f"{out_folder}/settings.txt", "w") as f:
+        f.write(f"Source dim: {args.src_dim}\n")
+        f.write(f"Seed: {args.seed}\n")
+        f.write(f"Batch Size: {args.batch_size}\n")
+        f.write(f"Learning Rate: {args.learning_rate}\n")
+        f.write(f"Embedding Dim: {args.embedding_dim}\n")
+        f.write(f"Hidden Size: {args.hidden_size}\n")
+        f.write(f"Num Epochs: {args.num_epochs}\n\n\n")
+        f.write(f"Train RMSE: {args.train_loss:.2f}\n")
+        f.write(f"Val RMSE: {args.val_loss:.2f}\n")
+        f.write(f"Test RMSE: {args.rmse:.2f}\n")
+        f.write(f"MAE: {args.mae:.2f}")
+
+    print(f"RMSE: {rmse:.2f}")
+    print(f"MAE: {mae:.2f}")
