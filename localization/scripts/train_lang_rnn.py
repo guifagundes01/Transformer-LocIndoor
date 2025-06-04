@@ -33,13 +33,14 @@ from localization.dataset import LangDataset
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train RNN Model')
     parser.add_argument('--seed', type=int, default=33, help='Random seed')
-    parser.add_argument('-b','--batch_size', type=int, default=1024, help='Batch size')
-    parser.add_argument('-n', '--num_epochs', type=int, default=100, help='Number of epochs')
-    parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
-    parser.add_argument('-p', '--patience', type=int, default=15, help='Patience')
-    parser.add_argument('-s', '--src_dim', type=int, default=20, help='Source dimension')
     parser.add_argument('-f', '--data_folder', type=str, default="data/generated", help='Data folder')
-    parser.add_argument('-o', '--out_dir', type=str, default="output/rnn", help='Output folder')
+    parser.add_argument('-b','--batch_size', type=int, default=1024, help='Batch size')
+    parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
+    parser.add_argument('-n', '--num_epochs', type=int, default=100, help='Number of epochs')
+    parser.add_argument('-e', '--embedding_dim', type=int, default=128, help='Embedding dimension')
+    parser.add_argument('-h', '--hidden_size', type=int, default=32, help='Hidden size')
+    parser.add_argument('-s', '--src_dim', type=int, default=20, help='Source dimension')
+    parser.add_argument('-o', '--out_dir', type=str, default="output/lrnn", help='Output folder')
 
     args = parser.parse_args()
     print('Args:')
@@ -59,10 +60,11 @@ if __name__ == "__main__":
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     model = RNNRegressorEmb(vocab_size=NUM_ROUTERS + NUM_SPECIAL_TOKENS,
-                            embedding_dim=64, hidden_size=256).to(device)
+                            embedding_dim=args.embedding_dim,
+                            hidden_size=args.hidden_size,
+                            padding_id=PADDING_IDX).to(device)
     min_loss = np.inf
     min_epoch = -1
-    patience_counter = 0
 
     loss_function = nn.L1Loss()
     # loss_function = nn.CrossEntropyLoss()
@@ -71,7 +73,8 @@ if __name__ == "__main__":
 
     if not path.exists(args.out_dir): makedirs(args.out_dir)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    writer = SummaryWriter(f"{args.out_dir}/trainer_{timestamp}")
+    out_folder = f"{args.out_dir}/trainer_{timestamp}"
+    writer = SummaryWriter(out_folder)
 
     for epoch in range(args.num_epochs):
         print(f'Epoch {epoch+1}/{args.num_epochs}\n')
@@ -103,8 +106,8 @@ if __name__ == "__main__":
         val_loss /= len(val_dataset)
         print(f'Validation loss: {val_loss}\n')
 
-        writer.add_scalars("Loss", {"Train": train_loss, "Val": val_loss}, epoch)
-        writer.add_scalar("Best Epoch", min_epoch+1, epoch)
+        writer.add_scalars("Loss", {"Train": train_loss, "Val": val_loss}, epoch+1)
+        writer.add_scalar("Best Epoch", min_epoch+1, epoch+1)
         writer.flush()
 
         # model saving
@@ -118,15 +121,5 @@ if __name__ == "__main__":
             best_state_dict = model.state_dict()
             torch.save(best_state_dict, model_path)
 
-        # early stopping
-        if epoch+1 >= 2:
-            if val_loss > min_loss:
-              patience_counter += 1
-            else:
-              patience_counter = 0
-
-        if patience_counter >= args.patience:
-            print('Training done!')
-            break
-
+    print('Training done!')
     writer.close()
