@@ -36,10 +36,10 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=33, help='Random seed')
     parser.add_argument('-f', '--data_folder', type=str, default="data/generated", help='Data folder')
     parser.add_argument('-b','--batch_size', type=int, default=1024, help='Batch size')
-    parser.add_argument('-l', '--learning_rate', type=float, default=1e-2, help='Learning rate')
-    parser.add_argument('-n', '--num_epochs', type=int, default=100, help='Number of epochs')
+    parser.add_argument('-l', '--learning_rate', type=float, default=1e-4, help='Learning rate')
+    parser.add_argument('-n', '--num_epochs', type=int, default=15, help='Number of epochs')
     parser.add_argument('-e', '--embedding_dim', type=int, default=128, help='Embedding dimension')
-    parser.add_argument('-h', '--hidden_size', type=int, default=32, help='Hidden size')
+    parser.add_argument('-hs', '--hidden_size', type=int, default=32, help='Hidden size')
     parser.add_argument('-s', '--src_dim', type=int, default=20, help='Source dimension')
     parser.add_argument('-o', '--out_dir', type=str, default="output/lrnn", help='Output folder')
 
@@ -52,9 +52,9 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
 
-    train_dataset = LangDataset(f"{args.data_folder}/trainingDataL.pt", device,
+    train_dataset = LangDataset(f"{args.data_folder}/trainingData_b0f0.pt", device,
                                 args.src_dim, SOS_IDX, PADDING_IDX)
-    val_dataset = LangDataset(f"{args.data_folder}/validationDataL.pt", device,
+    val_dataset = LangDataset(f"{args.data_folder}/validationData_b0f0.pt", device,
                               args.src_dim, SOS_IDX, PADDING_IDX)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
@@ -152,10 +152,10 @@ if __name__ == "__main__":
         f.write(f"Embedding Dim: {args.embedding_dim}\n")
         f.write(f"Hidden Size: {args.hidden_size}\n")
         f.write(f"Num Epochs: {args.num_epochs}\n\n\n")
-        f.write(f"Train RMSE: {args.train_loss:.2f}\n")
-        f.write(f"Val RMSE: {args.val_loss:.2f}\n")
-        f.write(f"Test RMSE: {args.rmse:.2f}\n")
-        f.write(f"MAE: {args.mae:.2f}")
+        f.write(f"Train RMSE: {train_loss:.2f}\n")
+        f.write(f"Val RMSE: {val_loss:.2f}\n")
+        f.write(f"Test RMSE: {rmse:.2f}\n")
+        f.write(f"MAE: {mae:.2f}")
 
     print(f"RMSE: {rmse:.2f}")
     print(f"MAE: {mae:.2f}")
